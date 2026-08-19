@@ -4,6 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>База знаний: Сельские спортивные игры по футболу (группа 2)</title>
+    <!-- Подключение VK Bridge -->
+    <script src="https://vk.com/js/api/xd_connection.js?2"></script>
+    <script>
+        // Инициализация VK Bridge при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.vkBridge) {
+                window.vkBridge.send('VKWebAppInit')
+                    .then(function(data) {
+                        console.log('VK Web App инициализирован:', data);
+                        // Можно подписаться на события
+                        window.vkBridge.subscribe(function(event) {
+                            console.log('Событие VK Bridge:', event);
+                            // Обновление темы, если нужно
+                            if (event.detail && event.detail.type === 'VKWebAppUpdateConfig') {
+                                const scheme = event.detail.data.scheme;
+                                document.documentElement.style.setProperty('--vk-color-scheme', scheme);
+                            }
+                        });
+                    })
+                    .catch(function(error) {
+                        console.error('Ошибка инициализации VK Bridge:', error);
+                    });
+            } else {
+                console.warn('VK Bridge не доступен, приложение работает в обычном режиме');
+            }
+        });
+    </script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
