@@ -2,34 +2,55 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>База знаний: Сельские спортивные игры по футболу (группа 2)</title>
-    <!-- Подключение VK Bridge -->
-    <script src="https://vk.com/js/api/xd_connection.js?2"></script>
+    
+    <!-- Подключение актуального VK Bridge -->
+    <script src="https://unpkg.com/@vk/vk-bridge/dist/browser.min.js"></script>
     <script>
-        // Инициализация VK Bridge при загрузке страницы
-        document.addEventListener('DOMContentLoaded', function() {
-            if (window.vkBridge) {
-                window.vkBridge.send('VKWebAppInit')
-                    .then(function(data) {
-                        console.log('VK Web App инициализирован:', data);
-                        // Можно подписаться на события
-                        window.vkBridge.subscribe(function(event) {
-                            console.log('Событие VK Bridge:', event);
-                            // Обновление темы, если нужно
-                            if (event.detail && event.detail.type === 'VKWebAppUpdateConfig') {
-                                const scheme = event.detail.data.scheme;
-                                document.documentElement.style.setProperty('--vk-color-scheme', scheme);
-                            }
-                        });
-                    })
-                    .catch(function(error) {
-                        console.error('Ошибка инициализации VK Bridge:', error);
-                    });
+        // Инициализация VK Bridge
+        // Вызываем сразу, не дожидаясь DOMContentLoaded, так как мост должен быть инициализирован как можно раньше
+        if (window.vkBridge) {
+            window.vkBridge.send('VKWebAppInit')
+                .then(function(data) {
+                    console.log('VK Web App инициализирован:', data);
+                    
+                    // Получаем параметры запуска (включая тему)
+                    return window.vkBridge.send('VKWebAppGetLaunchParams');
+                })
+                .then(function(launchParams) {
+                    console.log('Параметры запуска получены:', launchParams);
+                    // Применяем тему, если она пришла в параметрах
+                    if (launchParams && launchParams.scheme) {
+                        applyTheme(launchParams.scheme);
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Ошибка инициализации VK Bridge:', error);
+                });
+
+            // Подписка на события изменения конфигурации (например, смены темы пользователем)
+            window.vkBridge.subscribe(function(event) {
+                if (event.detail && event.detail.type === 'VKWebAppUpdateConfig') {
+                    const scheme = event.detail.data.scheme;
+                    applyTheme(scheme);
+                }
+            });
+        } else {
+            console.warn('VK Bridge не доступен, приложение работает в обычном режиме');
+        }
+
+        // Функция для применения темы ВКонтакте
+        function applyTheme(scheme) {
+            console.log('Применяется тема:', scheme);
+            document.documentElement.style.setProperty('--vk-color-scheme', scheme);
+            // Если scheme равен 'vkcom_dark' или 'space_gray', можно добавить класс к body для темных стилей
+            if (scheme === 'vkcom_dark' || scheme === 'space_gray') {
+                document.body.classList.add('dark-theme');
             } else {
-                console.warn('VK Bridge не доступен, приложение работает в обычном режиме');
+                document.body.classList.remove('dark-theme');
             }
-        });
+        }
     </script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
