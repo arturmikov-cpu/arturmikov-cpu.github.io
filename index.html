@@ -9,42 +9,45 @@
     <script src="https://unpkg.com/@vk/vk-bridge/dist/browser.min.js"></script>
     <script>
         // Инициализация VK Bridge
-        // Вызываем сразу, не дожидаясь DOMContentLoaded, так как мост должен быть инициализирован как можно раньше
-        if (window.vkBridge) {
-            window.vkBridge.send('VKWebAppInit')
-                .then(function(data) {
-                    console.log('VK Web App инициализирован:', data);
-                    
-                    // Получаем параметры запуска (включая тему)
-                    return window.vkBridge.send('VKWebAppGetLaunchParams');
-                })
-                .then(function(launchParams) {
-                    console.log('Параметры запуска получены:', launchParams);
-                    // Применяем тему, если она пришла в параметрах
-                    if (launchParams && launchParams.scheme) {
-                        applyTheme(launchParams.scheme);
-                    }
-                })
-                .catch(function(error) {
-                    console.error('Ошибка инициализации VK Bridge:', error);
-                });
+        // Вызываем сразу, не дожидаясь DOMContentLoaded, чтобы ВК не выдал таймаут
+        try {
+            if (typeof vkBridge !== 'undefined') {
+                // 1. Сначала отправляем сигнал инициализации (снимает экран загрузки ВК)
+                vkBridge.send('VKWebAppInit')
+                    .then(function(data) {
+                        console.log('VK Web App инициализирован:', data);
+                        // 2. После успешной инициализации запрашиваем параметры запуска
+                        return vkBridge.send('VKWebAppGetLaunchParams');
+                    })
+                    .then(function(launchParams) {
+                        console.log('Параметры запуска получены:', launchParams);
+                        // Применяем тему, если она пришла
+                        if (launchParams && launchParams.scheme) {
+                            applyTheme(launchParams.scheme);
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error('Ошибка инициализации VK Bridge:', error);
+                    });
 
-            // Подписка на события изменения конфигурации (например, смены темы пользователем)
-            window.vkBridge.subscribe(function(event) {
-                if (event.detail && event.detail.type === 'VKWebAppUpdateConfig') {
-                    const scheme = event.detail.data.scheme;
-                    applyTheme(scheme);
-                }
-            });
-        } else {
-            console.warn('VK Bridge не доступен, приложение работает в обычном режиме');
+                // Подписка на события изменения конфигурации (например, смены темы)
+                vkBridge.subscribe(function(event) {
+                    if (event.detail && event.detail.type === 'VKWebAppUpdateConfig') {
+                        const scheme = event.detail.data.scheme;
+                        applyTheme(scheme);
+                    }
+                });
+            } else {
+                console.error('VK Bridge не найден!');
+            }
+        } catch (e) {
+            console.error('Критическая ошибка при инициализации VK Bridge:', e);
         }
 
         // Функция для применения темы ВКонтакте
         function applyTheme(scheme) {
             console.log('Применяется тема:', scheme);
             document.documentElement.style.setProperty('--vk-color-scheme', scheme);
-            // Если scheme равен 'vkcom_dark' или 'space_gray', можно добавить класс к body для темных стилей
             if (scheme === 'vkcom_dark' || scheme === 'space_gray') {
                 document.body.classList.add('dark-theme');
             } else {
@@ -311,55 +314,19 @@
     </div>
 
     <div id="years" class="section">
-        <div class="card">
-            <h2>📅 Турниры по годам</h2>
-            <p>Нажмите на год, чтобы раскрыть детали. В спойлере показаны призёры, полная таблица мест и матчи. Команды, участвовавшие в матчах, но без указания места, помещаются в конец таблицы со значением «нет данных».</p>
-            <div style="margin: 15px 0;">
-                <input type="text" id="yearFilter" placeholder="Фильтр по году (например, 2015)" style="padding: 8px 15px; border-radius: 30px; border: 1px solid #ccc; width: 200px;">
-            </div>
-            <div id="yearContainer"></div>
-        </div>
+        <!-- Контент рендерится JS -->
     </div>
 
     <div id="teams" class="section">
-        <div class="card">
-            <h2>🏁 Результаты команд</h2>
-            <p>Выберите команду, чтобы увидеть её историю выступлений.</p>
-            <div style="margin: 15px 0;">
-                <select id="teamSelect" style="padding: 8px 15px; border-radius: 30px; border: 1px solid #ccc; width: 250px;">
-                    <option value="">-- Выберите команду --</option>
-                </select>
-            </div>
-            <div id="teamInfo" style="margin-top: 15px; background: #f1f5f9; border-radius: 12px; padding: 15px; min-height: 80px;">
-                Выберите команду для отображения.
-            </div>
-        </div>
+        <!-- Контент рендерится JS -->
     </div>
 
     <div id="matches" class="section">
-        <div class="card">
-            <h2>⚽ Результаты матчей (по годам)</h2>
-            <p>Полный перечень всех известных матчей с указанием счёта. Данные за 2000–2016 и 2017–2025.</p>
-            <div id="matchesContainer"></div>
-        </div>
+        <!-- Контент рендерится JS -->
     </div>
 
     <div id="stats" class="section">
-        <div class="card">
-            <h2>📊 Статистика турниров</h2>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 15px; margin-bottom: 20px;">
-                <div class="stat-box"><strong>Всего матчей (известных)</strong><br>≈ 120+</div>
-                <div class="stat-box"><strong>Самый крупный счёт</strong><br><span class="badge">10:1</span> (2018, Карагайский – Кудымкарский)</div>
-                <div class="stat-box"><strong>Больше всего голов за турнир</strong><br>2022 – 70</div>
-                <div class="stat-box"><strong>Меньше всего голов</strong><br>2024 – 44</div>
-            </div>
-            <h3>Общее количество голов по годам (только основное время)</h3>
-            <table id="goalsTable">
-                <thead><tr><th>Год</th><th>Голов</th></tr></thead>
-                <tbody></tbody>
-            </table>
-            <div class="footnote">* Данные за 2000–2016 не полные, указано только по известным матчам.</div>
-        </div>
+        <!-- Контент рендерится JS -->
     </div>
 
     <!-- Подвал с ссылкой -->
