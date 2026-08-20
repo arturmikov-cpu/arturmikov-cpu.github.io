@@ -18,31 +18,36 @@
         };
     </script>
 
-    <!-- Подключаем VK Bridge с обработчиком ошибки загрузки -->
-    <script src="https://cdn.jsdelivr.net/npm/@vk/vk-bridge/dist/browser.min.js" 
-            onerror="document.getElementById('debug-log').innerHTML += '<br>ОШИБКА: Скрипт VK Bridge не смог загрузиться! (Блокировка CDN)'">
+    <!-- Подключаем VK Bridge ЛОКАЛЬНО -->
+    <script src="vk-bridge.js" 
+            onerror="document.getElementById('debug-log').innerHTML += '<br>ОШИБКА: Локальный скрипт VK Bridge не найден!'">
     </script>
 
     <script>
-        try {
-            document.getElementById('debug-log').innerHTML += 'Скрипт подключен. Проверка vkBridge...<br>';
-            
-            if (typeof vkBridge !== 'undefined') {
-                document.getElementById('debug-log').innerHTML += 'vkBridge найден. Отправка VKWebAppInit...<br>';
+        // Ждем загрузки DOM, чтобы гарантированно найти #debug-log
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                var logDiv = document.getElementById('debug-log');
+                logDiv.innerHTML += 'Скрипт подключен. Проверка vkBridge...<br>';
                 
-                vkBridge.send('VKWebAppInit')
-                    .then(function(data) {
-                        document.getElementById('debug-log').innerHTML += '<span style="color:green">УСПЕХ! VKWebAppInit прошел. Приложение должно было загрузиться.</span><br>';
-                    })
-                    .catch(function(error) {
-                        document.getElementById('debug-log').innerHTML += '<br>ОШИБКА ИНИЦИАЛИЗАЦИИ: ' + JSON.stringify(error) + '<br>';
-                    });
-            } else {
-                document.getElementById('debug-log').innerHTML += '<br>ОШИБКА: vkBridge не определен, хотя скрипт загрузился.<br>';
+                if (typeof vkBridge !== 'undefined') {
+                    logDiv.innerHTML += 'vkBridge найден. Отправка VKWebAppInit...<br>';
+                    
+                    // Обязательно отправляем событие инициализации
+                    vkBridge.send('VKWebAppInit')
+                        .then(function(data) {
+                            logDiv.innerHTML += '<span style="color:green">УСПЕХ! VKWebAppInit прошел. Приложение должно было загрузиться.</span><br>';
+                        })
+                        .catch(function(error) {
+                            logDiv.innerHTML += '<br>ОШИБКА ИНИЦИАЛИЗАЦИИ: ' + JSON.stringify(error) + '<br>';
+                        });
+                } else {
+                    logDiv.innerHTML += '<br>ОШИБКА: vkBridge не определен.<br>';
+                }
+            } catch (e) {
+                document.getElementById('debug-log').innerHTML += '<br>КРИТИЧЕСКАЯ ОШИБКА: ' + e.message + '<br>';
             }
-        } catch (e) {
-            document.getElementById('debug-log').innerHTML += '<br>КРИТИЧЕСКАЯ ОШИБКА: ' + e.message + '<br>';
-        }
+        });
     </script>
 </body>
 </html>
